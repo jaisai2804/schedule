@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>My Schedule</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;
+  --text:#fff;--text2:rgba(255,255,255,.45);--text3:rgba(255,255,255,.28);
+  --border:rgba(255,255,255,.07);--accent:#0a84ff;
+  --green:#30d158;--orange:#ff9f0a;--red:#ff3b30;--purple:#bf5af2;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;min-height:100%;overflow-x:hidden}
+body{padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none;min-height:100vh;flex-direction:column}
+.page.active{display:flex}
+
+/* ── SHARED NAV ── */
+.nav-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0;flex-shrink:0}
+.nav-title{font-size:17px;font-weight:600}
+.nav-btn{background:none;border:none;color:var(--accent);font-size:15px;font-weight:500;cursor:pointer;padding:6px;font-family:inherit}
+
+/* ══════════════════════════════
+   PAGE 1 — WIDGET PREVIEW
+══════════════════════════════ */
+#pg-widget{background:var(--bg);align-items:center;padding:20px 16px 100px}
+.widget-shell{width:180px;height:180px;border-radius:28px;background:#1c1c1e;padding:12px;display:flex;gap:9px;border:.5px solid rgba(255,255,255,.08);overflow:hidden;margin:0 auto 10px}
+.w-left{width:70px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.w-ring-wrap{position:relative;width:62px;height:62px}
+.w-ring-wrap svg{width:62px;height:62px}
+.w-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.w-pct{font-size:13px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.w-pct-lbl{font-size:7px;color:var(--text3);margin-top:1px}
+.w-frac{text-align:center}
+.w-fnum{font-size:17px;font-weight:700;line-height:1}
+.w-fline{height:1.5px;border-radius:1px;margin:2px auto;width:18px}
+.w-fden{font-size:10px;font-weight:500;color:var(--text2);line-height:1}
+.w-nxt{text-align:center}
+.w-nxt-lbl{font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.w-nxt-time{font-size:11px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
+.w-nxt-venue{font-size:7.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;margin-top:1px}
+.w-right{flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0;gap:2px}
+.w-ci{display:flex;align-items:center;gap:5px}
+.w-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.w-info{flex:1;min-width:0}
+.w-cname{font-size:9.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-cvenue{font-size:7.5px;color:var(--text3)}
+
+/* mini switch */
+.swm{width:34px;height:20px;border-radius:10px;position:relative;cursor:pointer;flex-shrink:0;user-select:none;transition:background .32s ease;display:flex;align-items:center}
+.swm.off{background:#3a3a3c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.swm.on{background:var(--green);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 7px rgba(52,199,89,.4)}
+.swm::before{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(150deg,rgba(255,255,255,.2) 0%,transparent 50%);pointer-events:none;z-index:2}
+.swm-knob{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:50%;transform:translateY(-50%);z-index:3;transition:left .36s cubic-bezier(.34,1.56,.64,1),width .15s ease;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.swm.off .swm-knob{left:3px}.swm.on .swm-knob{left:17px}
+.swm:active .swm-knob{width:18px}.swm.on:active .swm-knob{left:13px}
+
+.widget-hint{font-size:12px;color:var(--text3);text-align:center;margin-bottom:24px}
+
+/* ══════════════════════════════
+   PAGE 2 — MAIN APP
+══════════════════════════════ */
+#pg-app{background:var(--bg)}
+.app-scroll{flex:1;overflow-y:auto;padding-bottom:90px}
+.app-scroll::-webkit-scrollbar{display:none}
+
+.app-header{padding:10px 20px 8px;display:flex;align-items:flex-end;justify-content:space-between}
+.app-title{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1}
+.app-date{font-size:13px;color:var(--text2);margin-top:2px}
+.app-pct-big{font-size:32px;font-weight:700;letter-spacing:-1.5px;line-height:1;text-align:right;transition:color .5s}
+.app-pct-lbl{font-size:11px;color:var(--text2);text-align:right;margin-top:1px}
+.cal-btn{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cal-icon{width:30px;height:30px;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.cal-icon-top{height:9px;background:var(--red)}
+.cal-icon-bot{flex:1;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000}
+.cal-lbl{font-size:9px;color:var(--text3)}
+
+.charge-wrap{padding:0 20px;margin-bottom:10px}
+.bar-bg{width:100%;height:14px;background:rgba(255,255,255,.07);border-radius:7px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:7px;width:0%;transition:width .8s cubic-bezier(.34,1.56,.64,1),background .6s ease;position:relative}
+.bar-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:14px;background:rgba(255,255,255,.28);filter:blur(3px);border-radius:50%}
+.bar-shine{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,transparent 60%);border-radius:7px;pointer-events:none}
+.bar-meta{display:flex;justify-content:space-between;margin-top:5px}
+.bar-lbl{font-size:11px;color:var(--text2)}
+.bar-frac{font-size:14px;font-weight:600;transition:color .5s}
+
+.next-banner{margin:0 16px 10px;border-radius:14px;padding:10px 13px;display:flex;align-items:center;gap:10px;background:rgba(255,159,10,.1);border:.5px solid rgba(255,159,10,.25);transition:background .4s,border-color .4s}
+.next-banner.green{background:rgba(48,209,88,.1);border-color:rgba(48,209,88,.25)}
+.nb-body{flex:1;min-width:0}
+.nb-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.nb-cdown{font-size:20px;font-weight:700;color:var(--orange);letter-spacing:-.8px;flex-shrink:0;transition:color .4s;font-variant-numeric:tabular-nums}
+.nb-cdown.green{color:var(--green)}
+
+.section{padding:0 16px;margin-bottom:10px}
+.section-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:7px;padding:0 2px}
+.card{background:var(--surface);border-radius:18px;overflow:hidden}
+.card-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:.5px solid var(--border)}
+.card-row:last-child{border-bottom:none}
+.cdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:15px;font-weight:500}
+.cmeta{font-size:12px;color:var(--text2);margin-top:2px}
+.sw{width:48px;height:28px;border-radius:14px;position:relative;cursor:pointer;flex-shrink:0;user-select:none;transition:background .32s ease;display:flex;align-items:center}
+.sw.off{background:#3a3a3c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.sw.on{background:var(--green);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 10px rgba(52,199,89,.4)}
+.sw::before{content:'';position:absolute;inset:0;border-radius:14px;background:linear-gradient(155deg,rgba(255,255,255,.2) 0%,transparent 50%);pointer-events:none;z-index:2}
+.sw-knob{width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:50%;transform:translateY(-50%);z-index:3;transition:left .36s cubic-bezier(.34,1.56,.64,1),width .15s ease;box-shadow:0 2px 5px rgba(0,0,0,.3)}
+.sw.off .sw-knob{left:3px}.sw.on .sw-knob{left:23px}
+.sw:active .sw-knob{width:26px}.sw.on:active .sw-knob{left:19px}
+
+/* ══════════════════════════════
+   PAGE 3 — IMPORT TIMETABLE
+══════════════════════════════ */
+#pg-import{background:var(--bg)}
+.import-scroll{flex:1;overflow-y:auto;padding:16px 16px 100px}
+.import-scroll::-webkit-scrollbar{display:none}
+.import-card{background:var(--surface);border-radius:18px;padding:16px;margin-bottom:12px}
+.import-card-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.import-card-sub{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px}
+.drop-zone{border:1.5px dashed rgba(255,255,255,.15);border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:background .2s,border-color .2s;position:relative}
+.drop-zone:active,.drop-zone.has{background:rgba(48,209,88,.05);border-color:rgba(48,209,88,.4)}
+.drop-icon{font-size:36px;margin-bottom:8px;color:rgba(255,255,255,.2)}
+.drop-txt{font-size:14px;font-weight:500;color:var(--text2)}
+.drop-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.drop-preview{width:100%;max-height:140px;object-fit:contain;border-radius:10px;margin-top:10px;display:none}
+.drop-preview.show{display:block}
+.inp-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block}
+.inp{width:100%;background:var(--surface2);border:.5px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--text3)}
+.inp-hint{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5}
+.btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.btn:active{opacity:.75}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.secondary{background:var(--surface2);color:var(--text2)}
+.btn.green-btn{background:var(--green)}
+.prog-bar{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin:12px 0 4px}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .4s ease}
+.prog-msg{font-size:12px;color:var(--text3);text-align:center}
+.result-day{margin-bottom:10px}
+.result-day-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.slot-chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border-radius:8px;padding:4px 8px;font-size:11px;margin:2px;border:.5px solid var(--border)}
+.slot-chip-v{color:var(--text3)}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:10px;padding:5px 10px;font-size:12px;font-weight:500;margin-bottom:8px}
+.chip.ok{background:rgba(48,209,88,.12);border:.5px solid rgba(48,209,88,.25);color:var(--green)}
+.chip.err{background:rgba(255,59,48,.1);border:.5px solid rgba(255,59,48,.2);color:var(--red)}
+.chip.warn{background:rgba(255,159,10,.1);border:.5px solid rgba(255,159,10,.2);color:var(--orange)}
+.result-scroll{max-height:200px;overflow-y:auto}
+.result-scroll::-webkit-scrollbar{width:3px}
+.result-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px}
+
+/* ══════════════════════════════
+   BOTTOM TAB BAR
+══════════════════════════════ */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:calc(56px + env(safe-area-inset-bottom,0px));background:rgba(28,28,30,.92);backdrop-filter:blur(20px);border-top:.5px solid rgba(255,255,255,.08);display:flex;align-items:flex-start;padding-top:8px;z-index:50}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;opacity:.45;transition:opacity .15s}
+.tab-btn.active{opacity:1}
+.tab-icon{font-size:22px;color:var(--accent)}
+.tab-lbl{font-size:10px;font-weight:500;color:var(--accent)}
+.tab-btn:not(.active) .tab-icon,.tab-btn:not(.active) .tab-lbl{color:rgba(255,255,255,.5)}
+
+/* ══════════════════════════════
+   CALENDAR SHEET
+══════════════════════════════ */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.show{opacity:1;pointer-events:all}
+.sheet{width:100%;max-width:480px;max-height:88vh;background:var(--surface);border-radius:24px 24px 0 0;transform:translateY(100%);transition:transform .35s cubic-bezier(.34,1.1,.64,1);overflow:hidden;display:flex;flex-direction:column}
+.overlay.show .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:10px auto 0;flex-shrink:0}
+.sheet-title{font-size:17px;font-weight:600;text-align:center;padding:8px 16px 0;flex-shrink:0}
+.month-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;flex-shrink:0}
+.mnav-btn{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 10px;border-radius:8px}
+.mnav-btn:active{background:rgba(255,255,255,.1)}
+.month-lbl{font-size:15px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 14px;flex-shrink:0}
+.cal-dow{font-size:10px;font-weight:500;color:var(--text3);text-align:center;padding:4px 0}
+.cal-day{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,.7);cursor:pointer;margin:0 auto;transition:background .15s;position:relative}
+.cal-day:active{background:rgba(255,255,255,.1)}
+.cal-day.today{color:#fff;font-weight:600}
+.cal-day.today::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cal-day.sel{background:var(--accent);color:#fff}
+.cal-day.sel::after{display:none}
+.cal-day.other{color:rgba(255,255,255,.18)}
+.cal-day.sat{color:#5ac8fa}.cal-day.sun{color:var(--red)}
+.cal-day.ov::before{content:'';position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--orange);border:1px solid var(--surface)}
+.cal-sep{height:.5px;background:var(--border);margin:8px 16px;flex-shrink:0}
+.day-cfg{padding:10px 16px 16px;overflow-y:auto;flex:1}
+.day-cfg::-webkit-scrollbar{display:none}
+.cfg-title{font-size:14px;font-weight:600;margin-bottom:10px}
+.order-list{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.order-opt{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--surface2);border-radius:12px;cursor:pointer;border:.5px solid transparent;transition:border-color .15s}
+.order-opt.active{border-color:var(--accent);background:rgba(10,132,255,.1)}
+.order-opt-lbl{flex:1;font-size:14px}
+.order-opt-cnt{font-size:11px;color:var(--accent);font-weight:500}
+.order-opt input[type=radio]{accent-color:var(--accent);width:16px;height:16px}
+.slot-sec-lbl{font-size:11px;color:var(--text3);margin-bottom:6px}
+.slot-list{display:flex;flex-direction:column;gap:4px}
+.slot-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:12px;cursor:grab;border:.5px solid var(--border);touch-action:none}
+.slot-item.dragging{opacity:.4;border-style:dashed}
+.slot-item.drag-over{border-color:var(--accent)}
+.slot-handle{color:var(--text3);font-size:14px}
+.slot-dot2{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.slot-info2{flex:1;min-width:0}
+.slot-name2{font-size:13px;font-weight:500}
+.slot-meta2{font-size:11px;color:var(--text2);margin-top:1px}
+.slot-rm{background:none;border:none;color:rgba(255,59,48,.6);font-size:18px;cursor:pointer;padding:2px 5px;border-radius:6px;line-height:1}
+.add-slot-btn{width:100%;background:rgba(10,132,255,.1);border:.5px solid rgba(10,132,255,.2);color:var(--accent);border-radius:12px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px}
+.save-day-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px}
+
+/* scan loading */
+.scan-ov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.scan-ov.show{opacity:1;pointer-events:all}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-ov-msg{font-size:15px;color:rgba(255,255,255,.7);font-weight:500}
+
+/* empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+</style>
+</head>
+<body>
+
+<canvas id="cv" style="display:none"></canvas>
+<input type="file" id="tt-file" accept="image/*" style="display:none"/>
+
+<!-- ══ PAGE: WIDGET ══ -->
+<div class="page active" id="pg-widget">
+  <div class="nav-bar">
+    <span style="font-size:13px;color:var(--text3)">Preview</span>
+    <span class="nav-title">Widget</span>
+    <span style="width:60px"></span>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px">
+    <div class="widget-hint" style="margin-bottom:16px;font-size:11px;color:var(--text3)">Home screen · 1:1 widget</div>
+    <div class="widget-shell">
+      <div class="w-left">
+        <div class="w-ring-wrap">
+          <svg viewBox="0 0 62 62">
+            <defs>
+              <linearGradient id="rg" x1="0" y1="0" x2="1" y2="0">
+                <stop id="rg1" offset="0%" stop-color="#ff3b30"/>
+                <stop id="rg2" offset="100%" stop-color="#ff3b30"/>
+              </linearGradient>
+            </defs>
+            <circle cx="31" cy="31" r="25" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="7"/>
+            <circle cx="31" cy="31" r="25" fill="none" stroke="url(#rg)" stroke-width="7"
+              stroke-dasharray="157.08" stroke-dashoffset="157.08" stroke-linecap="round"
+              id="w-arc" style="transform:rotate(-90deg);transform-origin:31px 31px;transition:stroke-dashoffset .7s cubic-bezier(.34,1.56,.64,1)"/>
+          </svg>
+          <div class="w-ring-center">
+            <span id="w-pct" class="w-pct">0%</span>
+            <span class="w-pct-lbl">done</span>
+          </div>
+        </div>
+        <div class="w-frac">
+          <div class="w-fnum" id="w-fnum">0</div>
+          <div class="w-fline" id="w-fline"></div>
+          <div class="w-fden" id="w-fden">0</div>
+        </div>
+        <div class="w-nxt">
+          <div class="w-nxt-lbl">next class in</div>
+          <div class="w-nxt-time" id="w-nxt-time">–</div>
+          <div class="w-nxt-venue" id="w-nxt-venue">–</div>
+        </div>
+      </div>
+      <div class="w-right" id="w-right"></div>
+    </div>
+    <div class="widget-hint">Tap switches to mark attendance</div>
+  </div>
+</div>
+
+<!-- ══ PAGE: APP ══ -->
+<div class="page" id="pg-app">
+  <div class="app-scroll">
+    <div style="padding:14px 20px 0;display:flex;justify-content:space-between;align-items:center">
+      <span id="app-clock" style="font-size:13px;color:var(--text2)"></span>
+    </div>
+    <div class="app-header">
+      <div>
+        <div class="app-title">Schedule</div>
+        <div class="app-date" id="app-date">–</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <div class="cal-btn" onclick="openCal()" role="button">
+          <div class="cal-icon">
+            <div class="cal-icon-top"></div>
+            <div class="cal-icon-bot" id="cal-day-num">1</div>
+          </div>
+          <div class="cal-lbl">Calendar</div>
+        </div>
+        <div>
+          <div class="app-pct-big" id="app-pct">0%</div>
+          <div class="app-pct-lbl">day done</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="charge-wrap">
+      <div class="bar-bg">
+        <div class="bar-fill" id="bar-fill"><div class="bar-shine"></div></div>
+      </div>
+      <div class="bar-meta">
+        <span class="bar-lbl" id="bar-lbl">0 of 0 attended</span>
+        <span class="bar-frac" id="bar-frac">0/0</span>
+      </div>
+    </div>
+
+    <div class="next-banner" id="next-banner">
+      <span id="nb-icon" style="font-size:17px;flex-shrink:0">⏱</span>
+      <div class="nb-body">
+        <div class="nb-title" id="nb-title">–</div>
+        <div class="nb-sub" id="nb-sub">–</div>
+      </div>
+      <div class="nb-cdown" id="nb-cdown">–</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Today's classes</div>
+      <div class="card" id="app-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: IMPORT ══ -->
+<div class="page" id="pg-import">
+  <div class="nav-bar">
+    <span style="width:60px"></span>
+    <span class="nav-title">Import Timetable</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="import-scroll">
+
+    <!-- STEP 1: API KEY -->
+    <div class="import-card" id="step-key">
+      <div class="import-card-title">🔑 Anthropic API Key</div>
+      <div class="import-card-sub">Claude Vision reads your timetable photo and extracts subject codes + venues from green cells automatically. Get a free key at console.anthropic.com → API Keys.</div>
+      <label class="inp-label" for="key-inp">API Key (starts with sk-ant-…)</label>
+      <input class="inp" id="key-inp" type="password" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false"/>
+      <div class="inp-hint">Stays only in your device memory. Never sent anywhere except directly to Anthropic's API.</div>
+    </div>
+
+    <!-- STEP 2: UPLOAD -->
+    <div class="import-card" id="step-upload">
+      <div class="import-card-title">📸 Upload your timetable</div>
+      <div class="import-card-sub">Take a clear screenshot of your full timetable. Green-highlighted cells = classes. The clearer the image, the better the results.</div>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('tt-file').click()" role="button">
+        <div class="drop-icon">📋</div>
+        <div class="drop-txt">Tap to choose photo</div>
+        <div class="drop-sub">Supports JPG, PNG, WEBP, HEIC</div>
+        <img class="drop-preview" id="drop-prev" alt=""/>
+      </div>
+      <div id="import-status" style="margin-top:8px"></div>
+      <div class="prog-bar" id="prog-bar" style="display:none"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-msg" id="prog-msg"></div>
+      <button class="btn" id="analyse-btn" onclick="runAnalysis()" disabled>
+        🧠 Analyse with Claude Vision
+      </button>
+      <button class="btn secondary" style="margin-top:6px" onclick="runPixelScan()">
+        🔬 Use pixel scanner (no API key)
+      </button>
+    </div>
+
+    <!-- STEP 3: RESULT -->
+    <div class="import-card" id="step-result" style="display:none">
+      <div class="import-card-title">✅ Review & Confirm</div>
+      <div id="result-status"></div>
+      <div class="result-scroll" id="result-preview"></div>
+      <button class="btn green-btn" onclick="confirmTimetable()">💾 Save timetable</button>
+      <button class="btn secondary" style="margin-top:6px" onclick="resetImport()">↩ Try again</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- CALENDAR OVERLAY -->
+<div class="overlay" id="cal-ov" onclick="maybeCloseSheet(event)">
+  <div class="sheet" id="cal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Calendar</div>
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="month-lbl" id="month-lbl">–</span>
+      <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-sep"></div>
+    <div class="day-cfg" id="day-cfg">
+      <div style="font-size:13px;color:var(--text3);text-align:center;padding:16px 0">Tap a date to configure</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN OVERLAY -->
+<div class="scan-ov" id="scan-ov">
+  <div class="spinner"></div>
+  <div class="scan-ov-msg" id="scan-msg">Analysing with Claude Vision…</div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-widget" onclick="goTab('widget')">
+    <span class="tab-icon">⊙</span>
+    <span class="tab-lbl">Widget</span>
+  </button>
+  <button class="tab-btn" id="tab-app" onclick="goTab('app')">
+    <span class="tab-icon">📅</span>
+    <span class="tab-lbl">Today</span>
+  </button>
+  <button class="tab-btn" id="tab-import" onclick="goTab('import')">
+    <span class="tab-icon">⬆</span>
+    <span class="tab-lbl">Import</span>
+  </button>
+</div>
+
+<script>
+/* ══ TIMETABLE DATA (pre-loaded from your screenshot) ══ */
+const BASE_TT_DEFAULT = {
+  Mon:[
+    {id:'m1',name:'BAENG101',time:'08:00',end:'08:50',venue:'AB4-304',color:'#0a84ff'},
+    {id:'m2',name:'BAPHY105',time:'09:50',end:'10:40',venue:'AB4-304',color:'#bf5af2'},
+    {id:'m3',name:'BAMAT101',time:'10:45',end:'11:35',venue:'AB4-304',color:'#ff9f0a'},
+  ],
+  Tue:[
+    {id:'t1',name:'BAMAT101',time:'08:00',end:'08:50',venue:'AB4-304',color:'#ff9f0a'},
+    {id:'t2',name:'BAEEE101',time:'10:45',end:'11:35',venue:'AB4-304',color:'#30d158'},
+  ],
+  Wed:[
+    {id:'w1',name:'BAEEE101',time:'08:00',end:'08:50',venue:'AB4-304',color:'#30d158'},
+    {id:'w2',name:'BAENG101',time:'08:55',end:'09:45',venue:'AB4-304',color:'#0a84ff'},
+    {id:'w3',name:'BAPHY105',time:'10:45',end:'11:35',venue:'AB4-304',color:'#bf5af2'},
+  ],
+  Thu:[
+    {id:'th1',name:'BAPHY105',time:'08:00',end:'08:50',venue:'AB4-304',color:'#bf5af2'},
+    {id:'th2',name:'BAMAT101',time:'08:55',end:'09:45',venue:'AB4-304',color:'#ff9f0a'},
+  ],
+  Fri:[
+    {id:'f1',name:'BAEEE101',time:'08:55',end:'09:45',venue:'AB4-304',color:'#30d158'},
+    {id:'f2',name:'BAENG101',time:'09:50',end:'10:40',venue:'AB4-304',color:'#0a84ff'},
+  ],
+  Sat:[],Sun:[],
+};
+
+/* ══ CONSTANTS ══ */
+const DAYS_S=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_F=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_S=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ORDER_OPTS=['Holiday','Monday','Tuesday','Wednesday','Thursday','Friday'];
+const DOTS=['#0a84ff','#bf5af2','#ff9f0a','#30d158','#ff375f','#5ac8fa'];
+const WCIRC=157.08;
+
+/* ══ STATE ══ */
+let baseTT   = JSON.parse(localStorage.getItem('tt-base-v3')||'null') || BASE_TT_DEFAULT;
+let overrides = JSON.parse(localStorage.getItem('tt-ov-v3')||'{}');
+let attend   = JSON.parse(localStorage.getItem('tt-att-v3')||'{}');
+let attDate  = localStorage.getItem('tt-att-date-v3')||'';
+let parsedTT = null;
+let uploadedFile = null;
+
+const TODAY = new Date();
+const TODAY_KEY = dk(TODAY);
+if(attDate !== TODAY_KEY){ attend={}; saveAtt(); }
+
+function dk(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+function p2(n){ return String(n).padStart(2,'0'); }
+function saveTT(){ localStorage.setItem('tt-base-v3',JSON.stringify(baseTT)); }
+function saveOv(){ localStorage.setItem('tt-ov-v3',JSON.stringify(overrides)); }
+function saveAtt(){ localStorage.setItem('tt-att-v3',JSON.stringify(attend)); localStorage.setItem('tt-att-date-v3',TODAY_KEY); }
+
+function getTodayClasses(){
+  const ov=overrides[TODAY_KEY];
+  if(ov){ return ov.order==='Holiday'?[]:( ov.slots||baseTT[DAYS_S[TODAY.getDay()]]||[] ); }
+  return baseTT[DAYS_S[TODAY.getDay()]]||[];
+}
+
+function srt(a){ return [...a].sort((x,y)=>toM(x.time)-toM(y.time)); }
+function toM(t){ const[h,m]=t.split(':').map(Number);return h*60+m; }
+function nowM(){ const n=new Date();return n.getHours()*60+n.getMinutes(); }
+function nowS(){ const n=new Date();return n.getHours()*3600+n.getMinutes()*60+n.getSeconds(); }
+function f12(t){ const[h,m]=t.split(':').map(Number),ap=h>=12?'PM':'AM',hh=h%12||12;return`${hh}:${p2(m)} ${ap}`; }
+function fcd(s){ if(s<=0)return'0:00';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return h>0?`${h}:${p2(m)}:${p2(sc)}`:`${m}:${p2(sc)}`; }
+
+function mcolor(p){
+  if(p<=0)return'#ff3b30';
+  if(p>=100)return'#30d158';
+  if(p<50){const t=p/50;return`rgb(255,${Math.round(59+100*t)},${Math.round(48-38*t)})`;}
+  const t=(p-50)/50;return`rgb(${Math.round(255-207*t)},${Math.round(159+50*t)},${Math.round(10+78*t)})`;
+}
+
+/* ══ TOGGLE ══ */
+function toggle(id){ attend[id]=!attend[id]; saveAtt(); render(); }
+
+/* ══ RENDER ══ */
+function render(){
+  const classes=srt(getTodayClasses());
+  const ns=nowS(), total=classes.length;
+  const done=classes.filter(c=>attend[c.id]).length;
+  const pct=total?Math.round(done/total*100):0;
+  const col=mcolor(pct);
+
+  /* gradient */
+  document.getElementById('rg1').setAttribute('stop-color',col);
+  document.getElementById('rg2').setAttribute('stop-color',pct>60?'#30d158':col);
+  document.getElementById('w-arc').style.strokeDashoffset=WCIRC*(1-pct/100);
+  el('w-pct').textContent=pct+'%'; el('w-pct').style.color=col;
+  el('w-fnum').textContent=done; el('w-fnum').style.color=col;
+  el('w-fline').style.background=col;
+  el('w-fden').textContent=total;
+
+  /* next class */
+  const nxt=classes.find(c=>!attend[c.id]&&toM(c.time)*60>ns-600);
+  if(nxt){
+    const diff=toM(nxt.time)*60-ns;
+    el('w-nxt-time').textContent=diff>0?fcd(diff):'Now';
+    el('w-nxt-time').style.color=diff>0?'#ff9f0a':'#30d158';
+    el('w-nxt-venue').textContent=nxt.venue;
+  } else {
+    el('w-nxt-time').textContent=total>0?'Done ✓':'–';
+    el('w-nxt-time').style.color='#30d158';
+    el('w-nxt-venue').textContent='';
+  }
+
+  /* widget rows */
+  const wr=el('w-right'); wr.innerHTML='';
+  classes.forEach(c=>{
+    const d=attend[c.id];
+    const div=mk('div','w-ci');
+    div.innerHTML=`<span class="w-dot" style="background:${c.color};${d?'opacity:.3':''}"></span>
+      <div class="w-info" style="${d?'opacity:.35':''}">
+        <div class="w-cname" style="${d?'text-decoration:line-through':''}">${c.name}</div>
+        <div class="w-cvenue">${c.venue}</div>
+      </div>
+      <div class="swm ${d?'on':'off'}" onclick="toggle('${c.id}')" role="switch">
+        <div class="swm-knob"></div>
+      </div>`;
+    wr.appendChild(div);
+  });
+
+  /* app */
+  el('app-pct').textContent=pct+'%'; el('app-pct').style.color=col;
+  const bf=el('bar-fill'); bf.style.width=Math.max(pct>0?2:0,pct)+'%'; bf.style.background=col;
+  el('bar-lbl').textContent=`${done} of ${total} attended`;
+  el('bar-frac').textContent=`${done}/${total}`; el('bar-frac').style.color=col;
+
+  const nb=el('next-banner'), nbcd=el('nb-cdown');
+  if(nxt){
+    const diff2=toM(nxt.time)*60-ns;
+    nb.className='next-banner'+(diff2<=0?' green':'');
+    el('nb-icon').textContent=diff2>0?'⏱':'🏃';
+    el('nb-title').textContent=nxt.name+' · '+nxt.venue;
+    el('nb-sub').textContent=diff2>0?`Starts at ${f12(nxt.time)}`:`Ends at ${f12(nxt.end||nxt.time)}`;
+    nbcd.className='nb-cdown'+(diff2<=0?' green':'');
+    nbcd.textContent=diff2>0?fcd(diff2):'Now';
+  } else {
+    nb.className='next-banner green';
+    el('nb-icon').textContent='✅';
+    el('nb-title').textContent=total>0?'All done today!':'No classes today';
+    el('nb-sub').textContent='Enjoy your time';
+    nbcd.className='nb-cdown green'; nbcd.textContent='–';
+  }
+
+  const al=el('app-list'); al.innerHTML='';
+  if(!classes.length){ al.innerHTML='<div class="empty-state">No classes today 🎉</div>'; return; }
+  classes.forEach(c=>{
+    const d=attend[c.id], row=mk('div','card-row');
+    row.innerHTML=`<span class="cdot" style="background:${c.color};${d?'opacity:.3':''}"></span>
+      <div class="cinfo">
+        <div class="cname" style="${d?'opacity:.38;text-decoration:line-through':''}">${c.name}</div>
+        <div class="cmeta">${f12(c.time)} – ${f12(c.end||c.time)} · ${c.venue}</div>
+      </div>
+      <div class="sw ${d?'on':'off'}" onclick="toggle('${c.id}')" role="switch">
+        <div class="sw-knob"></div>
+      </div>`;
+    al.appendChild(row);
+  });
+}
+
+function updateClock(){
+  const n=new Date(),h=n.getHours(),m=p2(n.getMinutes()),hh=h%12||12;
+  el('app-clock').textContent=`${hh}:${m}`;
+  el('app-date').textContent=`${DAYS_F[n.getDay()]}, ${MONTHS_S[n.getMonth()]} ${n.getDate()}`;
+  el('cal-day-num').textContent=n.getDate();
+}
+
+/* ══ TAB NAV ══ */
+function goTab(tab){
+  ['widget','app','import'].forEach(t=>{
+    el('pg-'+t).classList.toggle('active',t===tab);
+    el('tab-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+/* ══ CALENDAR ══ */
+let calView=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
+let selDate=null; let dragSrc=null;
+
+function openCal(){ calView=new Date(TODAY.getFullYear(),TODAY.getMonth(),1); renderCal(); el('cal-ov').classList.add('show'); }
+function maybeCloseSheet(e){ if(e.target===el('cal-ov')) el('cal-ov').classList.remove('show'); }
+function changeMonth(d){ calView=new Date(calView.getFullYear(),calView.getMonth()+d,1); renderCal(); }
+
+function renderCal(){
+  const y=calView.getFullYear(),m=calView.getMonth();
+  el('month-lbl').textContent=`${MONTHS[m]} ${y}`;
+  const grid=el('cal-grid'); grid.innerHTML='';
+  ['S','M','T','W','T','F','S'].forEach(d=>{ const e=mk('div','cal-dow');e.textContent=d;grid.appendChild(e); });
+  const first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),dipm=new Date(y,m,0).getDate();
+  for(let i=first-1;i>=0;i--){ const e=mk('div','cal-day other');e.textContent=dipm-i;grid.appendChild(e); }
+  for(let d=1;d<=dim;d++){
+    const date=new Date(y,m,d),ddk=dk(date),dow=date.getDay();
+    const e=mk('div','cal-day');
+    if(dow===0) e.classList.add('sun'); else if(dow===6) e.classList.add('sat');
+    if(ddk===TODAY_KEY) e.classList.add('today');
+    if(selDate&&ddk===dk(selDate)) e.classList.add('sel');
+    if(overrides[ddk]) e.classList.add('ov');
+    e.textContent=d; e.onclick=()=>selectDate(date);
+    grid.appendChild(e);
+  }
+  let rem=42-(first+dim); if(rem>7) rem-=7;
+  for(let d=1;d<=rem;d++){ const e=mk('div','cal-day other');e.textContent=d;grid.appendChild(e); }
+}
+
+function selectDate(date){
+  selDate=date; renderCal();
+  const ddk=dk(date),dow=date.getDay();
+  const ov=overrides[ddk]||{};
+  const curOrder=ov.order||(dow===0||dow===6?'Holiday':DAYS_S[dow]);
+  const cfg=el('day-cfg');
+  cfg.innerHTML=`<div class="cfg-title">${DAYS_F[dow]}, ${MONTHS_S[date.getMonth()]} ${date.getDate()}</div>
+    <div class="order-list" id="olist">
+      ${ORDER_OPTS.map(o=>`<label class="order-opt ${curOrder===o?'active':''}" id="oopt-${o}">
+        <input type="radio" name="dorder" value="${o}" ${curOrder===o?'checked':''} onchange="onOrdChange('${ddk}','${o}')"/>
+        <span class="order-opt-lbl">${o}</span>
+        ${o!=='Holiday'?`<span class="order-opt-cnt">${(baseTT[o]||[]).length} cls</span>`:'<span class="order-opt-cnt">🏖</span>'}
+      </label>`).join('')}
+    </div>
+    <div class="slot-sec-lbl">Drag to reorder · × to remove</div>
+    <div class="slot-list" id="slot-edit"></div>
+    <button class="add-slot-btn" onclick="addSlot()">+ Add slot</button>
+    <button class="save-day-btn" onclick="saveDayCfg('${ddk}')">Save for this day only</button>`;
+  renderSlotEdit(curOrder, ov.slots||null);
+}
+
+function onOrdChange(ddk,order){
+  ORDER_OPTS.forEach(o=>{ const e=el('oopt-'+o); if(e) e.className='order-opt'+(o===order?' active':''); });
+  renderSlotEdit(order,null);
+}
+
+function renderSlotEdit(order,overSlots){
+  const list=el('slot-edit'); if(!list) return;
+  list.innerHTML='';
+  if(order==='Holiday'){ list.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">Holiday — no classes</div>'; window._es=[]; return; }
+  const base=baseTT[order]||[];
+  window._es=overSlots?JSON.parse(JSON.stringify(overSlots)):JSON.parse(JSON.stringify(base));
+  window._es.forEach((sl,i)=>{
+    const item=mk('div','slot-item'); item.draggable=true; item.dataset.idx=i;
+    item.innerHTML=`<span class="slot-handle">⠿</span>
+      <span class="slot-dot2" style="background:${sl.color||DOTS[i%DOTS.length]}"></span>
+      <div class="slot-info2"><div class="slot-name2">${sl.name}</div><div class="slot-meta2">${f12(sl.time)} · ${sl.venue}</div></div>
+      <button class="slot-rm" onclick="rmSlot(${i})">×</button>`;
+    item.addEventListener('dragstart',()=>{dragSrc=i;item.classList.add('dragging');});
+    item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+    item.addEventListener('dragover',e=>{e.preventDefault();item.classList.add('drag-over');});
+    item.addEventListener('dragleave',()=>item.classList.remove('drag-over'));
+    item.addEventListener('drop',e=>{
+      e.preventDefault();item.classList.remove('drag-over');
+      if(dragSrc===null||dragSrc===i)return;
+      const[mv]=window._es.splice(dragSrc,1);window._es.splice(i,0,mv);
+      renderSlotEdit(document.querySelector('input[name=dorder]:checked')?.value||order,window._es);
+    });
+    list.appendChild(item);
+  });
+}
+
+function rmSlot(i){ window._es.splice(i,1); renderSlotEdit(document.querySelector('input[name=dorder]:checked')?.value||'Monday',window._es); }
+function addSlot(){ window._es=window._es||[]; window._es.push({id:'c'+Date.now(),name:'New Class',time:'09:00',end:'09:50',venue:'TBD',color:DOTS[window._es.length%DOTS.length]}); renderSlotEdit(document.querySelector('input[name=dorder]:checked')?.value||'Monday',window._es); }
+
+function saveDayCfg(ddk){
+  const order=document.querySelector('input[name=dorder]:checked')?.value||'Holiday';
+  overrides[ddk]={order,slots:order==='Holiday'?[]:JSON.parse(JSON.stringify(window._es||[]))};
+  saveOv(); renderCal(); if(ddk===TODAY_KEY) render();
+  el('cal-ov').classList.remove('show');
+}
+
+/* ══ IMPORT: FILE SELECT ══ */
+document.getElementById('tt-file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  uploadedFile=f; e.target.value='';
+  const url=URL.createObjectURL(f);
+  const prev=el('drop-prev'); prev.src=url; prev.classList.add('show');
+  el('drop-zone').classList.add('has');
+  el('analyse-btn').disabled=false;
+  el('import-status').innerHTML=`<div class="chip warn">📎 ${f.name}</div>`;
+});
+
+function setProgress(pct,msg){
+  el('prog-bar').style.display='block';
+  el('prog-fill').style.width=pct+'%';
+  el('prog-msg').textContent=msg;
+}
+
+/* ══ CLAUDE VISION ══ */
+async function runAnalysis(){
+  const key=el('key-inp').value.trim();
+  if(!key){ el('key-inp').style.borderColor='#ff3b30'; el('key-inp').placeholder='Please enter your API key'; return; }
+  if(!uploadedFile){ el('import-status').innerHTML='<div class="chip err">Please select an image first</div>'; return; }
+
+  el('analyse-btn').disabled=true;
+  el('scan-ov').classList.add('show');
+  el('scan-msg').textContent='Converting image…';
+
+  try{
+    const b64=await toB64(uploadedFile);
+    el('scan-msg').textContent='Sending to Claude Vision…';
+
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:2000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:uploadedFile.type||'image/jpeg',data:b64}},
+          {type:'text',text:`This is a college timetable. Rows: MON/TUE/WED/THU/FRI/SAT/SUN each with THEORY and LAB sub-rows. Columns are time slots: 08:00,08:55,09:50,10:45,11:40,12:35,Lunch,14:00,14:55,15:50,16:45,17:40,18:35. GREEN cells = classes. Cell format example: "A1-BAENG101-ETH-AB4-304-ALL03" where BAENG101=subject, AB4-304=venue. THEORY end times: 08:00→08:50, 08:55→09:45, 09:50→10:40, 10:45→11:35, 11:40→12:30, 12:35→13:25, 14:00→14:50, 14:55→15:45, 15:50→16:40, 16:45→17:35, 17:40→18:30, 18:35→19:25. Extract GREEN THEORY cells only. Return ONLY JSON no markdown: {"Mon":[{"name":"BAENG101","venue":"AB4-304","time":"08:00","end":"08:50"}],"Tue":[...],"Wed":[...],"Thu":[...],"Fri":[...],"Sat":[],"Sun":[]}`}
+        ]}]
+      })
+    });
+
+    el('scan-msg').textContent='Processing…';
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      throw new Error(err?.error?.message||`API error ${resp.status} — check your API key`);
+    }
+
+    const data=await resp.json();
+    const raw=(data.content||[]).map(x=>x.text||'').join('').trim();
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    buildResult(parsed,'claude');
+
+  } catch(err){
+    el('import-status').innerHTML=`<div class="chip err">❌ ${err.message}</div>`;
+    el('analyse-btn').disabled=false;
+  } finally {
+    el('scan-ov').classList.remove('show');
+  }
+}
+
+/* ══ PIXEL SCANNER ══ */
+async function runPixelScan(){
+  if(!uploadedFile){ el('import-status').innerHTML='<div class="chip err">Please select an image first</div>'; return; }
+  el('scan-ov').classList.add('show'); el('scan-msg').textContent='Scanning green cells…';
+  try{
+    const img=await loadImg(URL.createObjectURL(uploadedFile));
+    const cv=el('cv'),ctx=cv.getContext('2d');
+    cv.width=img.width; cv.height=img.height; ctx.drawImage(img,0,0);
+
+    const W=img.width,H=img.height;
+    /* structure: 4 header rows, then 14 day rows (2 per day) */
+    const TOTAL_ROWS=18,TOTAL_COLS=15;
+    const rh=H/TOTAL_ROWS,cw=W/TOTAL_COLS;
+    const TIME_SLOTS=[
+      {time:'08:00',end:'08:50'},{time:'08:55',end:'09:45'},{time:'09:50',end:'10:40'},
+      {time:'10:45',end:'11:35'},{time:'11:40',end:'12:30'},{time:'12:35',end:'13:25'},
+      null,
+      {time:'14:00',end:'14:50'},{time:'14:55',end:'15:45'},{time:'15:50',end:'16:40'},
+      {time:'16:45',end:'17:35'},{time:'17:40',end:'18:30'},{time:'18:35',end:'19:25'}
+    ];
+    const DAY_ROWS={Mon:4,Tue:6,Wed:8,Thu:10,Fri:12,Sat:14,Sun:16};
+    const result={Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+
+    Object.entries(DAY_ROWS).forEach(([day,theoryRow])=>{
+      TIME_SLOTS.forEach((slot,ci)=>{
+        if(!slot) return;
+        const col=ci+2;
+        const x=Math.floor(col*cw+4),y=Math.floor(theoryRow*rh+4);
+        const w=Math.max(1,Math.floor(cw-8)),h2=Math.max(1,Math.floor(rh-8));
+        if(x+w>W||y+h2>H) return;
+        const px=ctx.getImageData(x,y,w,h2).data;
+        let gs=0,tot=px.length/4;
+        for(let i=0;i<px.length;i+=4){
+          const r=px[i],g=px[i+1],b=px[i+2],a=px[i+3];
+          if(a<100) continue;
+          const mx=Math.max(r,g,b),mn=Math.min(r,g,b),sat=mx>0?(mx-mn)/mx:0;
+          if(g===mx&&g>100&&sat>0.22&&g>r*1.08&&g>b*1.05) gs++;
+        }
+        if(gs/tot>0.1){
+          result[day].push({name:`Slot${ci+1}`,venue:'Scanned',time:slot.time,end:slot.end});
+        }
+      });
+    });
+
+    buildResult(result,'pixel');
+  } catch(err){
+    el('import-status').innerHTML=`<div class="chip err">❌ ${err.message}</div>`;
+  } finally {
+    el('scan-ov').classList.remove('show');
+  }
+}
+
+function buildResult(parsed,mode){
+  const tt={Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(day=>{
+    (parsed[day]||[]).forEach((sl,i)=>{
+      tt[day].push({id:`${day}-${i}-${sl.name}`,name:sl.name,time:sl.time||'08:00',end:sl.end||'08:50',venue:sl.venue||'TBD',color:DOTS[i%DOTS.length]});
+    });
+  });
+  parsedTT=tt;
+  const total=Object.values(tt).reduce((s,a)=>s+a.length,0);
+  const rp=el('result-preview'); rp.innerHTML='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(day=>{
+    const slots=tt[day];
+    const block=mk('div','result-day');
+    block.innerHTML=`<div class="result-day-lbl">${day}</div>`;
+    if(!slots.length){ block.innerHTML+='<span style="font-size:12px;color:var(--text3)">No classes</span>'; }
+    else slots.forEach(sl=>{ block.innerHTML+=`<span class="slot-chip"><span style="width:6px;height:6px;border-radius:50%;background:${sl.color};flex-shrink:0;display:inline-block"></span> ${sl.name} <span class="slot-chip-v">${sl.venue} · ${sl.time}</span></span>`; });
+    rp.appendChild(block);
+  });
+  el('result-status').innerHTML=`<div class="chip ok">✓ ${total} classes found${mode==='pixel'?' (times only — names need Claude Vision)':''}</div>`;
+  el('step-result').style.display='block';
+  el('step-result').scrollIntoView({behavior:'smooth'});
+}
+
+function confirmTimetable(){
+  if(!parsedTT) return;
+  baseTT=parsedTT; saveTT(); render();
+  el('step-result').style.display='none';
+  el('import-status').innerHTML='<div class="chip ok">✅ Timetable saved! Switch to Today tab.</div>';
+}
+
+function resetImport(){
+  parsedTT=null; uploadedFile=null;
+  el('step-result').style.display='none';
+  el('drop-prev').classList.remove('show');
+  el('drop-zone').classList.remove('has');
+  el('analyse-btn').disabled=true;
+  el('import-status').innerHTML='';
+  el('prog-bar').style.display='none';
+  el('prog-msg').textContent='';
+}
+
+/* ══ UTILS ══ */
+function el(id){ return document.getElementById(id); }
+function mk(tag,cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+function toB64(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=()=>rej(new Error('Cannot read file')); r.readAsDataURL(f); }); }
+function loadImg(url){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('Cannot load image')); i.crossOrigin='anonymous'; i.src=url; }); }
+
+/* ══ INIT ══ */
+updateClock(); render();
+setInterval(render,1000);
+setInterval(updateClock,30000);
+</script>
+</body>
+</html>
